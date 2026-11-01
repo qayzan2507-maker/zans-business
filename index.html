@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<!--
+  ZAN BUSINESS v2.0 — Aplikasi Manajemen Bisnis & Kasir
+  Peningkatan dari v1:
+  • Toast notification + dialog konfirmasi bergaya (pengganti alert/confirm bawaan)
+  • Animasi: transisi halaman, kartu masuk bertahap, hover lift, angka count-up
+  • Grafik SVG interaktif: garis penjualan (tooltip hover) + donut metode pembayaran
+  • Kasir: filter kategori, qty +/-, tombol uang cepat, hitung kembalian, keranjang tersimpan
+  • Struk digital di modal + cetak; edit pelanggan; hapus transaksi; atur stok cepat
+  • Filter & sortir produk, filter tanggal/metode transaksi + pagination, filter bulan pengeluaran
+  • Laporan periode (7/30/90/semua), produk terlaris, ekspor CSV & backup/impor JSON
+  • Mode terang/gelap, jam langsung, pintasan Esc, responsif (sidebar ikon di layar kecil)
+  Data lama (localStorage 'panx_business_v1') tetap terbaca — kompatibel ke belakang.
+-->
+<html lang="id">
+<head>
+  <link rel="manifest" href="./manifest.json">
+
+<meta name="theme-color" content="#0B1730">
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZANS BUSINESS — Manajemen Bisnis &amp; Kasir</title>
+<link rel="stylesheet" href="usahaupgrade.css">
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#08152f">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">Z͡B</div>
+      <div class="brand-text"><h1>ZANS</h1><span>BUSINESS</span></div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-page="dashboard" data-tip="Dashboard" onclick="navigate('dashboard')"><span class="nav-ico">📊</span><span class="nav-label">Dashboard</span></button>
+      <button class="nav-btn" data-page="products" data-tip="Produk" onclick="navigate('products')"><span class="nav-ico">📦</span><span class="nav-label">Produk</span></button>
+      <button class="nav-btn" data-page="pos" data-tip="Kasir" onclick="navigate('pos')"><span class="nav-ico">🛒</span><span class="nav-label">Kasir (POS)</span></button>
+      <button class="nav-btn" data-page="customers" data-tip="Pelanggan" onclick="navigate('customers')"><span class="nav-ico">👥</span><span class="nav-label">Pelanggan</span></button>
+      <button class="nav-btn" data-page="transactions" data-tip="Transaksi" onclick="navigate('transactions')"><span class="nav-ico">🧾</span><span class="nav-label">Transaksi</span></button>
+      <button class="nav-btn" data-page="expenses" data-tip="Pengeluaran" onclick="navigate('expenses')"><span class="nav-ico">💸</span><span class="nav-label">Pengeluaran</span></button>
+      <button class="nav-btn" data-page="reports" data-tip="Laporan" onclick="navigate('reports')"><span class="nav-ico">📈</span><span class="nav-label">Laporan</span></button>
+    </nav>
+    <div class="sidebar-foot">
+      <button class="nav-btn" data-tip="Pengaturan" onclick="openSettings()"><span class="nav-ico">⚙️</span><span class="nav-label">Pengaturan</span></button>
+      <div class="ver">ZANS v2.0</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h2 id="pageTitle">Dashboard</h2>
+        <p class="page-sub" id="pageSub">Ringkasan bisnis hari ini</p>
+      </div>
+      <div class="topbar-right">
+        <div class="clock" id="clock"></div>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Ganti tema terang/gelap">☀️</button>
+      </div>
+    </header>
+
+    <div class="pages">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="page active" id="page-dashboard">
+        <div class="dash-head">
+          <div>
+            <h3 id="dashGreet">Selamat datang 👋</h3>
+            <p id="dashDate"></p>
+          </div>
+          <div class="quick-actions">
+            <button class="btn btn-blue" onclick="openProductForm()">+ Produk</button>
+            <button class="btn btn-outline" onclick="openExpenseForm()">+ Pengeluaran</button>
+            <button class="btn btn-green" onclick="navigate('pos')">🛒 Buka Kasir</button>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="s-ico blue">💰</div>
+            <div><span class="s-label">Penjualan Hari Ini</span><b class="s-val" id="statSales">Rp0</b><span class="s-sub" id="statSalesSub"></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="s-ico green">📈</div>
+            <div><span class="s-label">Laba Hari Ini</span><b class="s-val" id="statProfit">Rp0</b><span class="s-sub" id="statProfitSub"></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="s-ico purple">📦</div>
+            <div><span class="s-label">Total Produk</span><b class="s-val" id="statProducts">0</b><span class="s-sub" id="statProductsSub"></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="s-ico cyan">👥</div>
+            <div><span class="s-label">Pelanggan</span><b class="s-val" id="statCustomers">0</b><span class="s-sub" id="statCustomersSub"></span></div>
+          </div>
+        </div>
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-head"><h4>📊 Penjualan 7 Hari Terakhir</h4><span class="chip green" id="dashChartTotal"></span></div>
+            <div id="dashChart" class="chart-box"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h4>⚠️ Stok Menipis</h4></div>
+            <div id="dashLow" class="low-list"></div>
+          </div>
+        </div>
+        <div class="dash-grid2">
+          <div class="card">
+            <div class="card-head"><h4>🧾 Transaksi Terakhir</h4><button class="link-btn" onclick="navigate('transactions')">Lihat semua →</button></div>
+            <table class="table">
+              <thead><tr><th>Kode</th><th>Pelanggan</th><th>Pembayaran</th><th class="num">Total</th></tr></thead>
+              <tbody id="dashRecent"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-head"><h4>🔥 Produk Terlaris (7 hari)</h4></div>
+            <div id="dashTop" class="top-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PRODUK ============ -->
+      <section class="page" id="page-products">
+        <div class="toolbar">
+          <input id="prodSearch" class="input" placeholder="🔍 Cari nama / kategori produk..." oninput="renderProducts()">
+          <select id="prodCat" class="input" onchange="renderProducts()"><option value="">Semua Kategori</option></select>
+          <select id="prodSort" class="input" onchange="renderProducts()">
+            <option value="name">Urut: Nama A–Z</option>
+            <option value="priceDesc">Urut: Harga Tertinggi</option>
+            <option value="priceAsc">Urut: Harga Terendah</option>
+            <option value="stockAsc">Urut: Stok Sedikit</option>
+          </select>
+          <button class="btn btn-blue" onclick="openProductForm()">+ Tambah Produk</button>
+        </div>
+        <p class="count-line" id="prodCount"></p>
+        <div class="product-grid" id="productGrid"></div>
+      </section>
+
+      <!-- ============ KASIR (POS) ============ -->
+      <section class="page" id="page-pos">
+        <div class="pos-layout">
+          <div class="pos-left">
+            <div class="toolbar">
+              <input id="posSearch" class="input" placeholder="🔍 Cari produk... (Enter = tambah yang pertama)" oninput="renderPosGrid()" onkeydown="posEnter(event)">
+              <div class="chips" id="posCats"></div>
+            </div>
+            <div class="pos-grid" id="posGrid"></div>
+          </div>
+          <aside class="pos-right card">
+            <div class="card-head">
+              <h4>🛒 Keranjang <span class="chip tiny" id="cartCount">0</span></h4>
+              <button class="link-btn danger" onclick="clearCart()">Kosongkan</button>
+            </div>
+            <div id="cartList" class="cart-list"></div>
+            <div class="cart-form">
+              <label class="f-label">Pelanggan</label>
+              <select id="posCustomer" class="input"></select>
+              <label class="f-label">Metode Pembayaran</label>
+              <select id="posPayment" class="input" onchange="toggleCash()">
+                <option>Tunai</option>
+                <option>Transfer Bank</option>
+                <option>QRIS</option>
+                <option>Debit</option>
+              </select>
+              <div id="cashRow" class="cash-row" style="display:none">
+                <label class="f-label">Uang Diterima</label>
+                <input id="cashGiven" class="input" type="number" min="0" placeholder="0" oninput="renderChange()">
+                <div class="cash-quick">
+                  <button class="chip-btn" onclick="setCashExact()">Uang Pas</button>
+                  <button class="chip-btn" onclick="setCash(20000)">20rb</button>
+                  <button class="chip-btn" onclick="setCash(50000)">50rb</button>
+                  <button class="chip-btn" onclick="setCash(100000)">100rb</button>
+                </div>
+                <div class="change-line" id="changeLine"></div>
+              </div>
+              <div class="cart-total"><span>Total</span><b id="cartTotal">Rp0</b></div>
+              <button class="btn btn-green btn-block" id="btnCheckout" onclick="checkout()" disabled>Pilih Produk Dulu</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ============ PELANGGAN ============ -->
+      <section class="page" id="page-customers">
+        <div class="toolbar">
+          <input id="custSearch" class="input" placeholder="🔍 Cari nama / nomor telepon..." oninput="renderCustomers()">
+          <button class="btn btn-blue" onclick="openCustomerForm()">+ Tambah Pelanggan</button>
+        </div>
+        <div class="card table-card">
+          <table class="table">
+            <thead><tr><th>Pelanggan</th><th>Kontak</th><th>Alamat</th><th>Transaksi</th><th>Total Belanja</th><th class="num">Aksi</th></tr></thead>
+            <tbody id="custRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ TRANSAKSI ============ -->
+      <section class="page" id="page-transactions">
+        <div class="toolbar">
+          <input id="trxSearch" class="input" placeholder="🔍 Cari kode / pelanggan..." oninput="renderTransactions()">
+          <input id="trxFrom" class="input" type="date" onchange="renderTransactions()" title="Dari tanggal">
+          <input id="trxTo" class="input" type="date" onchange="renderTransactions()" title="Sampai tanggal">
+          <select id="trxPay" class="input" onchange="renderTransactions()">
+            <option value="">Semua Pembayaran</option>
+            <option>Tunai</option>
+            <option>Transfer Bank</option>
+            <option>QRIS</option>
+            <option>Debit</option>
+          </select>
+          <button class="btn btn-outline" onclick="resetTrxFilters()">Reset</button>
+          <button class="btn btn-green" onclick="exportCSV()" title="Ekspor hasil filter ke CSV">⬇ CSV</button>
+        </div>
+        <div class="trx-summary" id="trxSummary"></div>
+        <div class="card table-card">
+          <table class="table">
+            <thead><tr><th>Kode</th><th>Tanggal</th><th>Pelanggan</th><th>Pembayaran</th><th>Item</th><th class="num">Total</th><th class="num">Aksi</th></tr></thead>
+            <tbody id="trxRows"></tbody>
+          </table>
+          <div class="pager" id="trxPager"></div>
+        </div>
+      </section>
+
+      <!-- ============ PENGELUARAN ============ -->
+      <section class="page" id="page-expenses">
+        <div class="toolbar">
+          <select id="expMonth" class="input" onchange="renderExpenses()"><option value="">Semua Bulan</option></select>
+          <span class="chip green" id="expTotalChip">Total: Rp0</span>
+          <button class="btn btn-blue" onclick="openExpenseForm()">+ Tambah Pengeluaran</button>
+        </div>
+        <div class="card table-card">
+          <table class="table">
+            <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th class="num">Jumlah</th><th class="num">Aksi</th></tr></thead>
+            <tbody id="expRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ LAPORAN ============ -->
+      <section class="page" id="page-reports">
+        <div class="toolbar">
+          <div class="chips" id="repPeriod" style="width:auto;flex:1"></div>
+          <button class="btn btn-outline" onclick="exportReportCSV()">⬇ Unduh Laporan CSV</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="s-ico blue">💰</div>
+            <div><span class="s-label">Omzet</span><b class="s-val" id="repSales">Rp0</b><span class="s-sub">Total penjualan</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="s-ico cyan">🧮</div>
+            <div><span class="s-label">Modal Terjual</span><b class="s-val" id="repCost">Rp0</b><span class="s-sub">HPP produk terjual</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="s-ico red">💸</div>
+            <div><span class="s-label">Pengeluaran</span><b class="s-val" id="repExpense">Rp0</b><span class="s-sub">Biaya operasional</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="s-ico green">🏆</div>
+            <div><span class="s-label">Laba Bersih</span><b class="s-val" id="repProfit">Rp0</b><span class="s-sub">Omzet − modal − biaya</span></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head"><h4>📊 Grafik Penjualan</h4></div>
+          <div id="repChart" class="chart-box"></div>
+        </div>
+        <div class="dash-grid" style="margin-bottom:0">
+          <div class="card">
+            <div class="card-head"><h4>🏆 Produk Terlaris</h4></div>
+            <div id="repTop" class="top-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h4>💳 Metode Pembayaran</h4></div>
+            <div class="pay-flex" id="repPay"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- Modal umum (form & detail) -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modalTitle">Judul</h3>
+      <button class="modal-x" onclick="closeModal()" title="Tutup">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Dialog konfirmasi -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-ico red" id="confirmIco">⚠️</div>
+    <h3 id="confirmTitle">Yakin?</h3>
+    <p id="confirmMsg"></p>
+    <div class="confirm-foot">
+      <button class="btn btn-outline" onclick="answerConfirm(false)">Batal</button>
+      <button class="btn btn-red" id="confirmOk">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<div class="chart-tip" id="chartTip"></div>
+
+<script src="usahaupgrade.js"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(() => console.log("ZANS BUSINESS PWA aktif"))
+      .catch((error) => console.error("PWA Error:", error));
+  });
+}
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(registration => {
+        console.log("ZANS BUSINESS PWA berhasil aktif!", registration);
+      })
+      .catch(error => {
+        console.error("PWA gagal aktif:", error);
+      });
+  });
+}
+</script>
+</body>
+</html>
